@@ -76,7 +76,7 @@ To set up the project on your local machine, follow these steps:
 
    Once the dependencies are installed, you can run the application using:
    ```bash
-   streamlit run app.py
+   streamlit run mod1.py
    ```
 
 ---
