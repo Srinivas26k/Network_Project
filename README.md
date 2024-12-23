@@ -67,8 +67,12 @@ To set up the project on your local machine, follow these steps:
    ```bash
    pip install -r requirements.txt
    ```
+   or
+   ```bash
+   pip install streamlit networkx pandas plotly pyvis faiss-cpu numpy fpdf python-docx
+   ```
 
-5. **Run the Application**
+6. **Run the Application**
 
    Once the dependencies are installed, you can run the application using:
    ```bash
