@@ -9,12 +9,11 @@ from fpdf import FPDF
 from docx import Document
 import io
 import base64
-import random
 
-from utils import preprocess_data, create_network, create_embeddings, query_faiss, generate_report
+from utils import preprocess_data, create_network, create_embeddings, query_faiss, generate_report, calculate_pagerank, analyze_connection_quality, generate_insights
 
 # Set up FAISS
-dimension = 768  # Dimension of the nomic-embed-text embeddings
+dimension = 1  # Dimension of the simple embeddings
 index = faiss.IndexFlatL2(dimension)
 
 st.set_page_config(page_title="Interactive Network Analysis", layout="wide")
@@ -29,6 +28,7 @@ def load_data():
 
 df = load_data()
 
+
 # Create network graph
 G = create_network(df)
 
@@ -36,25 +36,73 @@ G = create_network(df)
 embeddings = create_embeddings(df['Name'].tolist())
 index.add(embeddings)
 
-# Sidebar for user input
-st.sidebar.header("Network Analysis Options")
-analysis_type = st.sidebar.selectbox("Choose Analysis Type", ["Overview", "Influence Paths", "Community Detection", "Simple Insights"])
+# Sidebar for navigation
+st.sidebar.header("Navigation")
+analysis_type = st.sidebar.selectbox(
+    "Choose Analysis Type",
+    ["Overview", "Concept Explanation", "Individual Node Analysis", "Influence Paths", "Community Detection", "Connection Quality", "RAG Insights", "Gamification"]
+)
+
+# Main content area
+st.header(analysis_type)
 
 if analysis_type == "Overview":
-    st.subheader("Network Overview")
+    st.write("This section provides a basic overview of the network, including statistics and visualization.")
     
     # Display basic network statistics
+    st.subheader("Network Statistics")
     st.write(f"Number of nodes: {G.number_of_nodes()}")
     st.write(f"Number of edges: {G.number_of_edges()}")
+    st.write(f"Average degree: {2 * G.number_of_edges() / G.number_of_nodes():.2f}")
     
     # Create and display network visualization
+    st.subheader("Network Visualization")
     net = Network(height="600px", width="100%", bgcolor="#222222", font_color="white")
     net.from_nx(G)
     net.save_graph("network.html")
     st.components.v1.html(open("network.html", "r").read(), height=600)
 
+elif analysis_type == "Concept Explanation":
+    st.write("Learn about key concepts in network analysis.")
+    
+    concepts = {
+        "Node": "A fundamental unit in a network, representing an entity (e.g., a person, organization, or data point).",
+        "Edge": "A connection between two nodes, representing a relationship or interaction.",
+        "Degree": "The number of edges connected to a node, indicating its connectivity.",
+        "Path": "A sequence of nodes and edges connecting two nodes in the network.",
+        "Centrality": "A measure of a node's importance in the network, based on its position and connections.",
+        "Community": "A group of nodes that are more densely connected to each other than to the rest of the network.",
+        "PageRank": "An algorithm that measures the importance of nodes based on the structure of incoming links."
+    }
+    
+    for concept, explanation in concepts.items():
+        st.subheader(concept)
+        st.write(explanation)
+
+elif analysis_type == "Individual Node Analysis":
+    st.write("Analyze individual nodes in the network to understand their properties and importance.")
+    
+    selected_node = st.selectbox("Select a node to analyze", df['Name'].tolist())
+    
+    st.subheader("Node Properties")
+    degree = G.degree(selected_node)
+    st.write(f"Degree: {degree}")
+    
+    component = next(nx.connected_components(G))
+    if selected_node in component:
+        st.write(f"Connected component size: {len(component)}")
+    else:
+        st.write("The selected node is not part of the largest connected component.")
+    
+    pagerank = calculate_pagerank(G)
+    st.write(f"PageRank score: {pagerank[selected_node]:.6f}")
+    
+    st.subheader("Node Neighbors")
+    neighbors = list(G.neighbors(selected_node))
+    st.write(f"Neighbors: {', '.join(neighbors)}")
+
 elif analysis_type == "Influence Paths":
-    st.subheader("Influence Paths")
+    st.write("Discover the shortest paths between nodes to understand influence flow in the network.")
     
     source = st.selectbox("Select source node", df['Name'].tolist())
     target = st.selectbox("Select target node", df['Name'].tolist())
@@ -62,19 +110,28 @@ elif analysis_type == "Influence Paths":
     if st.button("Find Influence Path"):
         try:
             path = nx.shortest_path(G, source=source, target=target)
-            st.write(f"Influence path from {source} to {target}:")
+            st.success(f"Influence path from {source} to {target}:")
             st.write(" -> ".join(path))
+            
+            # Visualize the path
+            path_graph = G.subgraph(path)
+            net = Network(height="400px", width="100%", bgcolor="#222222", font_color="white")
+            net.from_nx(path_graph)
+            net.save_graph("path.html")
+            st.components.v1.html(open("path.html", "r").read(), height=400)
         except nx.NetworkXNoPath:
-            st.write(f"No path found between {source} and {target}")
+            st.error(f"No path found between {source} and {target}")
 
 elif analysis_type == "Community Detection":
-    st.subheader("Community Detection")
+    st.write("Identify and visualize communities within the network.")
     
     communities = nx.community.louvain_communities(G)
     
+    st.subheader("Community Statistics")
     st.write(f"Number of communities detected: {len(communities)}")
     
     # Visualize communities
+    st.subheader("Community Visualization")
     pos = nx.spring_layout(G)
     fig = go.Figure()
     
@@ -87,26 +144,69 @@ elif analysis_type == "Community Detection":
     fig.update_layout(title="Community Detection Visualization", showlegend=True)
     st.plotly_chart(fig)
 
-elif analysis_type == "Simple Insights":
-    st.subheader("Simple Network Insights")
+elif analysis_type == "Connection Quality":
+    st.write("Evaluate the quality of connections for a specific node in the network.")
     
-    # Generate simple insights about the network
-    avg_degree = sum(dict(G.degree()).values()) / G.number_of_nodes()
-    max_degree_node = max(G.degree(), key=lambda x: x[1])[0]
-    num_connected_components = nx.number_connected_components(G)
+    selected_node = st.selectbox("Select a node to analyze", df['Name'].tolist())
+    quality_score, explanation = analyze_connection_quality(G, selected_node)
     
-    st.write(f"Average degree: {avg_degree:.2f}")
-    st.write(f"Node with highest degree: {max_degree_node}")
-    st.write(f"Number of connected components: {num_connected_components}")
+    st.subheader("Connection Quality Analysis")
+    st.write(f"Connection Quality Score: {quality_score:.2f}")
+    st.write(f"Explanation: {explanation}")
     
-    # Simple recommendation
-    random_node = random.choice(list(G.nodes()))
-    neighbors = list(G.neighbors(random_node))
-    if neighbors:
-        recommendation = random.choice(neighbors)
-        st.write(f"Random recommendation: {random_node} might want to connect with {recommendation}")
+    st.subheader("Node Connections")
+    neighbors = list(G.neighbors(selected_node))
+    st.write(f"Neighbors of {selected_node}: {', '.join(neighbors)}")
+    
+    st.subheader("Connections between Neighbors")
+    for i, n1 in enumerate(neighbors):
+        for n2 in neighbors[i+1:]:
+            if G.has_edge(n1, n2):
+                st.write(f"- {n1} is connected to {n2}")
+
+elif analysis_type == "RAG Insights":
+    st.write("Get AI-powered insights about the network using Retrieval Augmented Generation (RAG).")
+    
+    query = st.text_input("Ask a question about the network:")
+    
+    if query:
+        relevant_nodes = query_faiss(index, query, df['Name'].tolist(), k=5)
+        st.subheader("Relevant Nodes")
+        st.write(", ".join(relevant_nodes))
+        
+        st.subheader("Network Insights")
+        insights = generate_insights(G, query, relevant_nodes)
+        st.write(insights)
+
+elif analysis_type == "Gamification":
+    st.write("Experiment with the network by adding or removing nodes and observe the impact.")
+    
+    action = st.radio("Choose an action:", ["Add Node", "Remove Node"])
+    
+    if action == "Add Node":
+        new_node = st.text_input("Enter the name of the new node:")
+        connect_to = st.multiselect("Connect to existing nodes:", df['Name'].tolist())
+        
+        if st.button("Add Node"):
+            G.add_node(new_node)
+            for node in connect_to:
+                G.add_edge(new_node, node)
+            st.success(f"Added node {new_node} with {len(connect_to)} connections.")
     else:
-        st.write(f"Random node {random_node} has no connections to recommend")
+        remove_node = st.selectbox("Select a node to remove:", df['Name'].tolist())
+        
+        if st.button("Remove Node"):
+            G.remove_node(remove_node)
+            st.success(f"Removed node {remove_node}.")
+    
+    st.subheader("Updated Network Statistics")
+    st.write(f"Number of nodes: {G.number_of_nodes()}")
+    st.write(f"Number of edges: {G.number_of_edges()}")
+    
+    st.subheader("Updated PageRank Scores")
+    updated_pagerank = calculate_pagerank(G)
+    for node, score in sorted(updated_pagerank.items(), key=lambda x: x[1], reverse=True)[:5]:
+        st.write(f"{node}: {score:.6f}")
 
 # Report generation
 st.sidebar.header("Generate Report")
@@ -145,4 +245,12 @@ if st.sidebar.button("Generate Report"):
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("Created by Your Name")
+st.markdown("---")
+st.markdown("### Note: This project is for educational purposes only.")
+st.markdown("Connect with the creator:")
+st.markdown("[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/srinivas-nampalli/)")
+st.markdown("[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/Srinivas26k)")
+
+if __name__ == "__main__":
+    st.write("Streamlit app is running.")
 
