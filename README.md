@@ -27,7 +27,55 @@ This Enhanced Network Analysis Project is an interactive, educational tool desig
 - **scikit-learn**: For TF-IDF vectorization
 - **FPDF & python-docx**: For report generation
 
-## Installation
+### **Installation**
 
-1. Clone the repository:
+To set up the project on your local machine, follow these steps:
+
+1. **Clone the Repository**
+
+   First, clone the repository to your local machine using the following command:
+   ```bash
+   git clone https://github.com/Srinivas26k/Ropar_Network_Project.git
+   ```
+
+2. **Navigate to the Project Directory**
+
+   After cloning, navigate to the project directory:
+   ```bash
+   cd Ropar_Network_Project
+   ```
+
+3. **Create and Activate a Virtual Environment (Optional but Recommended)**
+
+   To keep dependencies isolated, it's recommended to create a virtual environment. Run the following command to create and activate the environment:
+
+   - **Windows:**
+     ```bash
+     python -m venv venv
+     .\venv\Scripts\activate
+     ```
+
+   - **Linux/macOS:**
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate
+     ```
+
+4. **Install the Required Dependencies**
+
+   Install the necessary dependencies for the project by running:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Run the Application**
+
+   Once the dependencies are installed, you can run the application using:
+   ```bash
+   python app.py
+   ```
+
+---
+
+This should provide a clear guide for anyone who wants to set up your project locally. Let me know if you need any further adjustments!
 
