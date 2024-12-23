@@ -72,7 +72,7 @@ To set up the project on your local machine, follow these steps:
 
    Once the dependencies are installed, you can run the application using:
    ```bash
-   python app.py
+   streamlit run app.py
    ```
 
 ---
