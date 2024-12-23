@@ -77,5 +77,5 @@ To set up the project on your local machine, follow these steps:
 
 ---
 
-This should provide a clear guide for anyone who wants to set up your project locally. Let me know if you need any further adjustments!
+
 
