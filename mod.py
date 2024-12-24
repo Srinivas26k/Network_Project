@@ -25,6 +25,7 @@ from nltk.tokenize import word_tokenize
 nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 
+
 # Set page config
 st.set_page_config(page_title="Enhanced Interactive Network Analysis", layout="wide")
 st.title("Enhanced Interactive Network Analysis with AI-Powered Insights")
