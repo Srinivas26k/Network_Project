@@ -13,9 +13,12 @@ This Enhanced Network Analysis Project is an interactive, educational tool desig
 - **Influence Path Detection**: Discover shortest paths between nodes.
 - **Community Detection**: Identify and visualize network communities.
 - **Connection Quality Analysis**: Evaluate the strength of node connections.
-- **RAG (Retrieval Augmented Generation) Insights**: AI-powered network analysis.
+- **AI Insights**: Get AI-powered analysis of your network (optional Gemini integration).
 - **Network Gamification**: Experiment with "what-if" scenarios by modifying the network.
 - **Flexible Reporting**: Generate comprehensive reports in various formats.
+- **Advanced Features**: Including link prediction, centrality comparisons, and more.
+- **Statistical Visualizations**: Visualize various network properties and distributions.
+- **Data Research**: Conduct in-depth analysis of network data over time.
 
 ## Technology Stack
 
@@ -23,15 +26,16 @@ This Enhanced Network Analysis Project is an interactive, educational tool desig
 - **NetworkX**: For graph creation and analysis
 - **Pandas**: For data manipulation
 - **Plotly & PyVis**: For interactive visualizations
-- **FAISS**: For efficient similarity search
-- **scikit-learn**: For TF-IDF vectorization
+- **scikit-learn**: For TF-IDF vectorization and similarity calculations
+- **NLTK**: For natural language processing tasks
+- **Google Generative AI**: For advanced AI insights (optional)
 - **FPDF & python-docx**: For report generation
 
-### **Installation**
+## Installation
 
-To set up the project on your local machine, follow these steps:
+1. Clone the repository:
 
-1. **Clone the Repository**
+
 
    First, clone the repository to your local machine using the following command:
    ```bash
@@ -75,8 +79,17 @@ To set up the project on your local machine, follow these steps:
 6. **Run the Application**
 
    Once the dependencies are installed, you can run the application using:
+   Latest Version
+    ```bash
+   streamlit run mod.py
+   ```
+   or
    ```bash
    streamlit run mod1.py
+   ```
+   or
+   ```bash
+   streamlit run app.py
    ```
 Copyright 2024 Nampalli Srinivas
 
