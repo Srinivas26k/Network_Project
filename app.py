@@ -12,6 +12,7 @@ import base64
 
 from utils import preprocess_data, create_network, create_embeddings, query_faiss, generate_report, calculate_pagerank, analyze_connection_quality, generate_insights
 
+
 # Set up FAISS
 dimension = 1  # Dimension of the simple embeddings
 index = faiss.IndexFlatL2(dimension)
