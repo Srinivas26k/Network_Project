@@ -1,57 +1,44 @@
 import networkx as nx
 import pandas as pd
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 def preprocess_data(df):
-    # Remove duplicates and reset index
     df = df.drop_duplicates().reset_index(drop=True)
-    
-    # Ensure all names are strings and strip whitespace
     df['Name'] = df['Name'].astype(str).str.strip()
     df['Choose your pick'] = df['Choose your pick'].astype(str).str.strip()
-    
     return df
 
 def create_network(df):
     G = nx.Graph()
-    
-    # Add nodes
-    for name in df['Name'].unique():
-        G.add_node(name)
-    
-    # Add edges
-    for _, row in df.iterrows():
-        G.add_edge(row['Name'], row['Choose your pick'])
-    
+    G.add_nodes_from(df['Name'].unique())
+    G.add_edges_from(zip(df['Name'], df['Choose your pick']))
     return G
 
-def create_embeddings(names):
-    # Simple embedding function using character count
-    return np.array([[len(name)] for name in names])
+def create_embeddings(names, vectorizer):
+    return vectorizer.fit_transform(names)
 
-def query_faiss(index, query, names, k=5):
-    query_vector = np.array([[len(query)]])  # Use the same embedding method as create_embeddings
-    _, indices = index.search(query_vector, k)
-    return [names[i] for i in indices[0]]
+def query_embeddings(query, embeddings, names, vectorizer, k=5):
+    query_embedding = vectorizer.transform([query])
+    similarities = cosine_similarity(query_embedding, embeddings)[0]
+    top_indices = similarities.argsort()[-k:][::-1]
+    return [names[i] for i in top_indices if i < len(names)]
 
-def generate_report(G, df, analysis_type):
-    report_data = {
-        "Number of Nodes": G.number_of_nodes(),
-        "Number of Edges": G.number_of_edges(),
-        "Average Degree": sum(dict(G.degree()).values()) / G.number_of_nodes(),
-        "Number of Connected Components": nx.number_connected_components(G),
-    }
-    
-    if analysis_type == "Community Detection":
-        communities = nx.community.louvain_communities(G)
-        report_data["Number of Communities"] = len(communities)
-    
-    return pd.DataFrame([report_data])
+def generate_insights(G, query, relevant_nodes):
+    insights = f"Based on the query '{query}', here are some insights about the relevant nodes:\n\n"
+    for node in relevant_nodes:
+        degree = G.degree(node)
+        pagerank = nx.pagerank(G)[node]
+        neighbors = list(G.neighbors(node))
+        insights += f"- {node}:\n"
+        insights += f"  Degree: {degree}\n"
+        insights += f"  PageRank: {pagerank:.6f}\n"
+        insights += f"  Neighbors: {', '.join(neighbors)}\n"
+        insights += f"  Community: {next(community for community in nx.community.greedy_modularity_communities(G) if node in community)}\n\n"
+    return insights
 
-def calculate_pagerank(G):
-    return nx.pagerank(G)
-
-def analyze_connection_quality(G, node):
+def calculate_connection_quality(G, node):
     neighbors = list(G.neighbors(node))
     total_possible_connections = len(neighbors) * (len(neighbors) - 1) / 2
     actual_connections = sum(1 for n1 in neighbors for n2 in neighbors if n1 < n2 and G.has_edge(n1, n2))
@@ -70,17 +57,21 @@ def analyze_connection_quality(G, node):
     
     return quality_score, explanation
 
-def generate_insights(G, query, relevant_nodes):
-    insights = f"Based on the query '{query}', here are some insights about the relevant nodes:\n\n"
-    
-    for node in relevant_nodes:
-        degree = G.degree(node)
-        pagerank = nx.pagerank(G)[node]
-        neighbors = list(G.neighbors(node))
-        insights += f"- {node}:\n"
-        insights += f"  Degree: {degree}\n"
-        insights += f"  PageRank: {pagerank:.6f}\n"
-        insights += f"  Neighbors: {', '.join(neighbors)}\n"
-        insights += f"  Community: {nx.community.louvain_communities(G.subgraph(neighbors))}\n\n"
-    
-    return insights
+def common_neighbors_score(G, node1, node2):
+    return len(list(nx.common_neighbors(G, node1, node2)))
+
+def predict_links(G, top_k=10):
+    non_edges = list(nx.non_edges(G))
+    scores = [(u, v, common_neighbors_score(G, u, v)) for u, v in non_edges]
+    return sorted(scores, key=lambda x: x[2], reverse=True)[:top_k]
+
+def calculate_network_metrics(G):
+    return {
+        "Number of Nodes": G.number_of_nodes(),
+        "Number of Edges": G.number_of_edges(),
+        "Average Degree": 2 * G.number_of_edges() / G.number_of_nodes(),
+        "Number of Connected Components": nx.number_connected_components(G),
+        "Average Clustering Coefficient": nx.average_clustering(G),
+        "Network Density": nx.density(G)
+    }
+
