@@ -46,30 +46,7 @@ if 'data' not in st.session_state:
 if 'labels' not in st.session_state:
     st.session_state.labels = {}
 
-# Theme toggle
-theme = tog.st_toggle_switch(label="Dark Mode", 
-                            key="theme_toggle", 
-                            default_value=False, 
-                            label_after = False, 
-                            inactive_color = '#D3D3D3', 
-                            active_color="#11567f", 
-                            track_color="#29B5E8"
-                            )
 
-if theme:
-    plt.style.use('dark_background')
-    st.markdown("""
-        <style>
-        .stApp {
-            background-color: #1E1E1E;
-            color: #FFFFFF;
-        }
-        .stSelectbox, .stTextInput {
-            background-color: #2E2E2E;
-            color: #FFFFFF;
-        }
-        </style>
-    """, unsafe_allow_html=True)
 
 st.title("Network Analysis ")
 if st.button("Support this project"):
